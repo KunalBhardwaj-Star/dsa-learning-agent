@@ -1,0 +1,4 @@
+{
+  "query": "query skillStats($username: String!) { matchedUser(username: $username) { tagProblemCounts { fundamental { tagName tagSlug problemsSolved } intermediate { tagName tagSlug problemsSolved } advanced { tagName tagSlug problemsSolved } } submitStats { acSubmissionNum { difficulty count } } } recentSubmissionList(username: $username) { title titleSlug timestamp statusDisplay } }",
+  "variables": { "username": "itswizard16" }
+}

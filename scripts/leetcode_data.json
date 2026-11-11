@@ -1,0 +1,311 @@
+{
+    "data": {
+        "matchedUser": {
+            "tagProblemCounts": {
+                "fundamental": [
+                    {
+                        "tagName": "Array",
+                        "tagSlug": "array",
+                        "problemsSolved": 92
+                    },
+                    {
+                        "tagName": "Matrix",
+                        "tagSlug": "matrix",
+                        "problemsSolved": 5
+                    },
+                    {
+                        "tagName": "String",
+                        "tagSlug": "string",
+                        "problemsSolved": 29
+                    },
+                    {
+                        "tagName": "Simulation",
+                        "tagSlug": "simulation",
+                        "problemsSolved": 9
+                    },
+                    {
+                        "tagName": "Sorting",
+                        "tagSlug": "sorting",
+                        "problemsSolved": 19
+                    },
+                    {
+                        "tagName": "Stack",
+                        "tagSlug": "stack",
+                        "problemsSolved": 21
+                    },
+                    {
+                        "tagName": "Queue",
+                        "tagSlug": "queue",
+                        "problemsSolved": 4
+                    },
+                    {
+                        "tagName": "Linked List",
+                        "tagSlug": "linked-list",
+                        "problemsSolved": 23
+                    },
+                    {
+                        "tagName": "Two Pointers",
+                        "tagSlug": "two-pointers",
+                        "problemsSolved": 26
+                    }
+                ],
+                "intermediate": [
+                    {
+                        "tagName": "Tree",
+                        "tagSlug": "tree",
+                        "problemsSolved": 18
+                    },
+                    {
+                        "tagName": "Binary Tree",
+                        "tagSlug": "binary-tree",
+                        "problemsSolved": 18
+                    },
+                    {
+                        "tagName": "Hash Table",
+                        "tagSlug": "hash-table",
+                        "problemsSolved": 37
+                    },
+                    {
+                        "tagName": "Ordered Set",
+                        "tagSlug": "ordered-set",
+                        "problemsSolved": 1
+                    },
+                    {
+                        "tagName": "Greedy",
+                        "tagSlug": "greedy",
+                        "problemsSolved": 9
+                    },
+                    {
+                        "tagName": "Binary Search",
+                        "tagSlug": "binary-search",
+                        "problemsSolved": 20
+                    },
+                    {
+                        "tagName": "Depth-First Search",
+                        "tagSlug": "depth-first-search",
+                        "problemsSolved": 15
+                    },
+                    {
+                        "tagName": "Breadth-First Search",
+                        "tagSlug": "breadth-first-search",
+                        "problemsSolved": 9
+                    },
+                    {
+                        "tagName": "Recursion",
+                        "tagSlug": "recursion",
+                        "problemsSolved": 11
+                    },
+                    {
+                        "tagName": "Sliding Window",
+                        "tagSlug": "sliding-window",
+                        "problemsSolved": 14
+                    },
+                    {
+                        "tagName": "Bit Manipulation",
+                        "tagSlug": "bit-manipulation",
+                        "problemsSolved": 11
+                    },
+                    {
+                        "tagName": "Math",
+                        "tagSlug": "math",
+                        "problemsSolved": 24
+                    },
+                    {
+                        "tagName": "Design",
+                        "tagSlug": "design",
+                        "problemsSolved": 9
+                    }
+                ],
+                "advanced": [
+                    {
+                        "tagName": "Data Stream",
+                        "tagSlug": "data-stream",
+                        "problemsSolved": 1
+                    },
+                    {
+                        "tagName": "Rolling Hash",
+                        "tagSlug": "rolling-hash",
+                        "problemsSolved": 1
+                    },
+                    {
+                        "tagName": "Backtracking",
+                        "tagSlug": "backtracking",
+                        "problemsSolved": 12
+                    },
+                    {
+                        "tagName": "Dynamic Programming",
+                        "tagSlug": "dynamic-programming",
+                        "problemsSolved": 15
+                    },
+                    {
+                        "tagName": "Divide and Conquer",
+                        "tagSlug": "divide-and-conquer",
+                        "problemsSolved": 6
+                    },
+                    {
+                        "tagName": "Union-Find",
+                        "tagSlug": "union-find",
+                        "problemsSolved": 1
+                    },
+                    {
+                        "tagName": "Segment Tree",
+                        "tagSlug": "segment-tree",
+                        "problemsSolved": 1
+                    },
+                    {
+                        "tagName": "Monotonic Stack",
+                        "tagSlug": "monotonic-stack",
+                        "problemsSolved": 11
+                    },
+                    {
+                        "tagName": "Monotonic Queue",
+                        "tagSlug": "monotonic-queue",
+                        "problemsSolved": 1
+                    }
+                ]
+            },
+            "submitStats": {
+                "acSubmissionNum": [
+                    {
+                        "difficulty": "All",
+                        "count": 178
+                    },
+                    {
+                        "difficulty": "Easy",
+                        "count": 70
+                    },
+                    {
+                        "difficulty": "Medium",
+                        "count": 94
+                    },
+                    {
+                        "difficulty": "Hard",
+                        "count": 14
+                    }
+                ]
+            }
+        },
+        "recentSubmissionList": [
+            {
+                "title": "Find the Smallest Divisor Given a Threshold",
+                "titleSlug": "find-the-smallest-divisor-given-a-threshold",
+                "timestamp": "1784842805",
+                "statusDisplay": "Accepted"
+            },
+            {
+                "title": "Find the Smallest Divisor Given a Threshold",
+                "titleSlug": "find-the-smallest-divisor-given-a-threshold",
+                "timestamp": "1784841660",
+                "statusDisplay": "Time Limit Exceeded"
+            },
+            {
+                "title": "All Nodes Distance K in Binary Tree",
+                "titleSlug": "all-nodes-distance-k-in-binary-tree",
+                "timestamp": "1784814204",
+                "statusDisplay": "Accepted"
+            },
+            {
+                "title": "All Nodes Distance K in Binary Tree",
+                "titleSlug": "all-nodes-distance-k-in-binary-tree",
+                "timestamp": "1784813943",
+                "statusDisplay": "Wrong Answer"
+            },
+            {
+                "title": "Smallest Subsequence of Distinct Characters",
+                "titleSlug": "smallest-subsequence-of-distinct-characters",
+                "timestamp": "1784488963",
+                "statusDisplay": "Accepted"
+            },
+            {
+                "title": "Smallest Subsequence of Distinct Characters",
+                "titleSlug": "smallest-subsequence-of-distinct-characters",
+                "timestamp": "1784488929",
+                "statusDisplay": "Compile Error"
+            },
+            {
+                "title": "Smallest Subsequence of Distinct Characters",
+                "titleSlug": "smallest-subsequence-of-distinct-characters",
+                "timestamp": "1784488903",
+                "statusDisplay": "Accepted"
+            },
+            {
+                "title": "Remove Duplicate Letters",
+                "titleSlug": "remove-duplicate-letters",
+                "timestamp": "1784487103",
+                "statusDisplay": "Accepted"
+            },
+            {
+                "title": "Find Greatest Common Divisor of Array",
+                "titleSlug": "find-greatest-common-divisor-of-array",
+                "timestamp": "1784394174",
+                "statusDisplay": "Accepted"
+            },
+            {
+                "title": "Maximum Width of Binary Tree",
+                "titleSlug": "maximum-width-of-binary-tree",
+                "timestamp": "1784134905",
+                "statusDisplay": "Accepted"
+            },
+            {
+                "title": "Maximum Width of Binary Tree",
+                "titleSlug": "maximum-width-of-binary-tree",
+                "timestamp": "1784134575",
+                "statusDisplay": "Runtime Error"
+            },
+            {
+                "title": "Lowest Common Ancestor of a Binary Tree",
+                "titleSlug": "lowest-common-ancestor-of-a-binary-tree",
+                "timestamp": "1783981133",
+                "statusDisplay": "Accepted"
+            },
+            {
+                "title": "Lowest Common Ancestor of a Binary Tree",
+                "titleSlug": "lowest-common-ancestor-of-a-binary-tree",
+                "timestamp": "1783980654",
+                "statusDisplay": "Accepted"
+            },
+            {
+                "title": "Binary Tree Paths",
+                "titleSlug": "binary-tree-paths",
+                "timestamp": "1783789240",
+                "statusDisplay": "Accepted"
+            },
+            {
+                "title": "Concatenate Non-Zero Digits and Multiply by Sum II",
+                "titleSlug": "concatenate-non-zero-digits-and-multiply-by-sum-ii",
+                "timestamp": "1783606116",
+                "statusDisplay": "Accepted"
+            },
+            {
+                "title": "Concatenate Non-Zero Digits and Multiply by Sum II",
+                "titleSlug": "concatenate-non-zero-digits-and-multiply-by-sum-ii",
+                "timestamp": "1783510820",
+                "statusDisplay": "Time Limit Exceeded"
+            },
+            {
+                "title": "Concatenate Non-Zero Digits and Multiply by Sum I",
+                "titleSlug": "concatenate-non-zero-digits-and-multiply-by-sum-i",
+                "timestamp": "1783456081",
+                "statusDisplay": "Accepted"
+            },
+            {
+                "title": "Symmetric Tree",
+                "titleSlug": "symmetric-tree",
+                "timestamp": "1783454635",
+                "statusDisplay": "Accepted"
+            },
+            {
+                "title": "Remove Covered Intervals",
+                "titleSlug": "remove-covered-intervals",
+                "timestamp": "1783377886",
+                "statusDisplay": "Accepted"
+            },
+            {
+                "title": "Remove Covered Intervals",
+                "titleSlug": "remove-covered-intervals",
+                "timestamp": "1783376667",
+                "statusDisplay": "Wrong Answer"
+            }
+        ]
+    }
+}
