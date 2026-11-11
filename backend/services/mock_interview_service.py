@@ -10,6 +10,7 @@ from backend.db.models import (
     Problem,
     Topic,
     ProblemTopic,
+    UserSkill,
     MockInterview,
     MockInterviewTranscript,
     InterviewStatus,
@@ -25,18 +26,35 @@ def create_mock_interview(
     session: Session = None,
 ) -> Dict[str, Any]:
     """
-    Creates a new AI Mock Interview Session per SRS Section 5.
-    Dynamically selects 1-2 target questions matching topic competencies.
+    Creates a new AI Mock Interview Session.
+    Dynamically selects target topics and candidate questions matching user competencies from PostgreSQL.
     """
+    if session is None:
+        raise ValueError("Database session is required to create a mock interview.")
+
     user = session.query(User).filter_by(id=user_id).first()
     if not user:
         raise ValueError(f"User with id={user_id} not found.")
 
+    # 1. DYNAMIC TOPIC RESOLUTION: If target_topics not provided, pick user's lowest-mastery topics from DB
     if not target_topics:
-        target_topics = ["DP", "Graphs", "Trees"]
+        weak_topics_query = (
+            session.query(Topic.name)
+            .join(UserSkill, Topic.id == UserSkill.topic_id)
+            .filter(UserSkill.user_id == user_id)
+            .order_by(UserSkill.skill_score.asc())
+            .limit(3)
+            .all()
+        )
+        target_topics = [t[0] for t in weak_topics_query]
 
-    # Select candidate problems for target topics
-    probs = (
+        # Dynamic Fallback: If user has no skills initialized yet, query global taxonomy from DB
+        if not target_topics:
+            all_topics = session.query(Topic.name).limit(3).all()
+            target_topics = [t[0] for t in all_topics]
+
+    # 2. DYNAMIC QUESTION SELECTION: Select candidate problems matching target topics from PostgreSQL
+    candidate_problems = (
         session.query(Problem)
         .join(ProblemTopic, Problem.frontend_question_id == ProblemTopic.frontend_question_id)
         .join(Topic, ProblemTopic.topic_id == Topic.id)
@@ -44,10 +62,13 @@ def create_mock_interview(
         .all()
     )
 
-    if not probs:
-        probs = session.query(Problem).limit(5).all()
+    if not candidate_problems:
+        candidate_problems = session.query(Problem).order_by(Problem.created_at.desc()).limit(5).all()
 
-    selected_problems = random.sample(probs, min(2, len(probs)))
+    if not candidate_problems:
+        raise ValueError("No problems available in PostgreSQL catalog to start a mock interview.")
+
+    selected_problems = random.sample(candidate_problems, min(2, len(candidate_problems)))
     selected_payload = [
         {
             "frontend_question_id": p.frontend_question_id,
@@ -100,9 +121,12 @@ def generate_socratic_response(
     session: Session = None,
 ) -> Dict[str, Any]:
     """
-    Generates Socratic interviewer response per SRS Section 5.
+    Generates Socratic interviewer response.
     Asks probing questions, provides hints when explicitly requested, logs transcript.
     """
+    if session is None:
+        raise ValueError("Database session is required to process mock interview transcript.")
+
     mock = session.query(MockInterview).filter_by(id=interview_id).first()
     if not mock:
         raise ValueError(f"Mock interview id={interview_id} not found.")
@@ -116,33 +140,33 @@ def generate_socratic_response(
     )
     session.add(user_tx)
 
-    # 2. Determine Socratic LLM response
+    # 2. Determine Socratic LLM response dynamically based on hints and input analysis
     response_text = ""
     hint_enum = None
 
     if requested_hint == "CLARIFICATION":
         hint_enum = HintLevel.CLARIFICATION
-        response_text = "Clarification: Consider constraints on input size and potential negative bounds. What edge cases could break your initial assumption?"
+        response_text = "Clarification: Consider constraints on input size and potential edge cases. What boundary conditions could break your initial assumption?"
     elif requested_hint == "SMALL_NUDGE":
         hint_enum = HintLevel.SMALL_NUDGE
-        response_text = "Nudge: How might a hash map or two-pointer technique reduce your search time from quadratic O(N^2) to linear O(N)?"
+        response_text = "Nudge: How might a hash map, two-pointer, or frequency array technique reduce your search complexity?"
     elif requested_hint == "APPROACH_OUTLINE":
         hint_enum = HintLevel.APPROACH_OUTLINE
-        response_text = "Approach Outline: 1. Initialize lookup state. 2. Iterate through elements storing visited complements. 3. Return matching indices."
+        response_text = "Approach Outline: 1. Initialize lookup state. 2. Iterate through elements tracking state dependencies. 3. Return target solution."
     elif requested_hint == "FULL_SOLUTION":
         hint_enum = HintLevel.FULL_SOLUTION
-        response_text = "Solution Outline: Use a map to store value -> index pairs. In a single pass, check if (target - num) is in map."
+        response_text = "Solution Outline: Construct the optimal dynamic state representation or traversal structure. In a single pass, track and resolve boundary cases."
     else:
-        # Socratic probing based on message content
+        # Socratic probing based on message keywords
         lower_msg = user_message.lower()
-        if "o(n)" in lower_msg or "complexity" in lower_msg or "space" in lower_msg:
-            response_text = "Solid complexity analysis! How does your space complexity scale if auxiliary memory cannot be allocated?"
-        elif "dp" in lower_msg or "recursion" in lower_msg or "memo" in lower_msg:
+        if any(kw in lower_msg for kw in ["o(n)", "complexity", "space", "time"]):
+            response_text = "Solid complexity analysis! How does your space complexity scale if auxiliary memory allocation is restricted?"
+        elif any(kw in lower_msg for kw in ["dp", "recursion", "memo", "state"]):
             response_text = "Good subproblem identification. What are your state transition equations and base case boundary conditions?"
-        elif "class" in lower_msg or "def " in lower_msg or "public" in lower_msg:
-            response_text = "Your implementation structure looks clear. Have you considered null pointers or out-of-bounds indexing?"
+        elif any(kw in lower_msg for kw in ["class", "def ", "public", "function"]):
+            response_text = "Your implementation structure looks clear. Have you considered null pointers, empty inputs, or out-of-bounds indexing?"
         else:
-            response_text = "Could you explain why this choice of data structure is superior to a simpler alternative here?"
+            response_text = "Could you explain why your choice of data structure is optimal for this specific problem context?"
 
     ai_tx = MockInterviewTranscript(
         interview_id=interview_id,
@@ -168,9 +192,12 @@ def complete_mock_interview(
     session: Session = None,
 ) -> Dict[str, Any]:
     """
-    Finalizes interview session, computes REAL evaluation scores from actual transcripts and events,
-    and feeds overall_performance_index back to LinUCB.
+    Finalizes interview session, computes evaluation scores from actual transcripts and events,
+    and feeds performance index back to LinUCB.
     """
+    if session is None:
+        raise ValueError("Database session is required to complete a mock interview.")
+
     mock = session.query(MockInterview).filter_by(id=interview_id).first()
     if not mock:
         raise ValueError(f"Mock interview id={interview_id} not found.")
@@ -180,7 +207,7 @@ def complete_mock_interview(
     user_transcripts = [t for t in transcripts if t.speaker == "USER"]
     user_turns = len(user_transcripts)
 
-    # 1. Real Communication Score Calculation
+    # 1. Dynamic Communication Score Calculation
     total_user_words = sum(len(t.message_text.split()) for t in user_transcripts)
     avg_words_per_turn = (total_user_words / user_turns) if user_turns > 0 else 0.0
 
@@ -190,7 +217,7 @@ def complete_mock_interview(
 
     comm_score = min(1.0, max(0.35, 0.4 + (avg_words_per_turn * 0.02) + (complexity_mentions * 0.1) - (hints_count * 0.05)))
 
-    # 2. Real Code Quality Score Calculation
+    # 2. Dynamic Code Quality Score Calculation
     code_text = submitted_code or ""
     code_length = len(code_text.strip())
     has_structure = any(kw in code_text for kw in ["class", "def", "public", "return", "for", "while", "if"])
@@ -202,7 +229,7 @@ def complete_mock_interview(
     else:
         code_score = 0.30
 
-    # 3. Real Time Management Score Calculation
+    # 3. Dynamic Time Management Score Calculation
     now = datetime.now(timezone.utc)
     started_at = mock.started_at
     if started_at.tzinfo is None:
@@ -226,7 +253,7 @@ def complete_mock_interview(
     mock.time_management_score = round(time_score, 2)
     mock.overall_performance_index = overall_idx
 
-    # Record target problem attempt to feed LinUCB
+    # Record target problem attempt to feed LinUCB bandit engine
     problems = mock.target_topics.get("problems", [])
     if problems:
         target_qid = problems[0]["frontend_question_id"]

@@ -5,7 +5,6 @@ from typing import Dict, Any, Optional, Union
 from sqlalchemy.orm import Session
 
 from backend.db.models import User, Problem, Topic, ProblemTopic, UserSkill, Attempt, BanditParam, UserSolvedProblem
-from backend.services.recommendation_service import get_user_context_vector
 from app.ml.reward_engine import compute_composite_reward
 from app.ml.bandit import LinUCB
 
@@ -48,6 +47,9 @@ def record_problem_attempt(
     """
     Logs problem attempt, computes composite reward R_total, updates user skills & LinUCB parameters.
     """
+
+    from backend.services.recommendation_service import get_user_context_vector
+
     if isinstance(user_id, User):
         user = user_id
     elif isinstance(user_id, uuid.UUID):

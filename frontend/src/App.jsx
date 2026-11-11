@@ -1,6 +1,28 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
-import { Play, RefreshCw, Send, Sparkles, CheckCircle, Code, MessageSquare, Award, ExternalLink, User as UserIcon, Lock, Mail, ShieldCheck, Settings, Briefcase, TrendingUp, XCircle, ArrowRight, LogOut, Check } from 'lucide-react';
+import {
+  Play,
+  RefreshCw,
+  Send,
+  Sparkles,
+  CheckCircle,
+  Code,
+  MessageSquare,
+  Award,
+  ExternalLink,
+  User as UserIcon,
+  Lock,
+  Mail,
+  ShieldCheck,
+  Settings,
+  Briefcase,
+  TrendingUp,
+  XCircle,
+  ArrowRight,
+  LogOut,
+  Check,
+  X
+} from 'lucide-react';
 
 const API_BASE = 'http://localhost:8000';
 
@@ -16,11 +38,11 @@ export default function App() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [otpCode, setOtpCode] = useState('');
-  const [leetcodeHandle, setLeetcodeHandle] = useState('starbuggs');
+  const [leetcodeHandle, setLeetcodeHandle] = useState('');
   const [preferredLanguage, setPreferredLanguage] = useState('Java');
 
   // Active Dashboard Tab
-  const [activeSection, setActiveSection] = useState('overview'); // 'overview' | 'recommendation' | 'interview' | 'analytics' | 'roadmap' | 'activity' | 'settings'
+  const [activeSection, setActiveSection] = useState('overview'); // 'overview' | 'recommendation' | 'interview' | 'analytics' | 'roadmap' | 'settings'
 
   // Dashboard Data States
   const [recommendation, setRecommendation] = useState(null);
@@ -31,8 +53,8 @@ export default function App() {
 
   // Attempt Modal State
   const [showAttemptModal, setShowAttemptModal] = useState(false);
-  const [attemptSuccess, setAttemptSuccess] = useState(true);
-  const [timeSpent, setTimeSpent] = useState(15);
+  const [pendingAction, setPendingAction] = useState('solve'); // 'solve' | 'mark_failed'
+  const [timeSpentMinutes, setTimeSpentMinutes] = useState(15);
 
   // Mock Interview State
   const [interview, setInterview] = useState(null);
@@ -45,7 +67,6 @@ export default function App() {
   const wsRef = useRef(null);
 
   // Settings Form Inputs
-  const [newPassword, setNewPassword] = useState('');
   const [settingsSuccess, setSettingsSuccess] = useState('');
 
   useEffect(() => {
@@ -54,19 +75,20 @@ export default function App() {
     }
   }, [token]);
 
-  const fetchCurrentUser = async () => {
+const fetchCurrentUser = async (authToken = token) => {
+    if (!authToken) return;
     try {
       const res = await fetch(`${API_BASE}/users/me`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${authToken}` },
       });
       if (res.ok) {
         const u = await res.json();
         setUser(u);
-        setLeetcodeHandle(u.leetcode_handle || 'starbuggs');
+        setLeetcodeHandle(u.leetcode_handle || '');
         setPreferredLanguage(u.preferred_language || 'Java');
         setAuthStep('dashboard');
 
-        fetchDashboardData(u.leetcode_handle || 'starbuggs');
+        fetchDashboardData(authToken);
       } else {
         localStorage.removeItem('access_token');
         setToken('');
@@ -77,18 +99,21 @@ export default function App() {
     }
   };
 
-  const fetchDashboardData = (handle) => {
-    fetchRecommendation(handle);
-    fetchAnalytics(handle);
-    fetchRoadmap();
+  const fetchDashboardData = (authToken = token) => {
+    fetchRecommendation(authToken);
+    fetchAnalytics(authToken);
+    fetchRoadmap(authToken);
   };
 
-  const fetchRecommendation = async (handle) => {
+  const fetchRecommendation = async (authToken = token) => {
     setLoadingRec(true);
     try {
-      const res = await fetch(`${API_BASE}/recommendations/next?user_id=${handle}`, {
+      const res = await fetch(`${API_BASE}/recommendations/next`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
       });
       if (res.ok) {
         const data = await res.json();
@@ -101,10 +126,10 @@ export default function App() {
     }
   };
 
-  const fetchAnalytics = async (handle) => {
+  const fetchAnalytics = async (authToken = token) => {
     try {
-      const res = await fetch(`${API_BASE}/analytics/me?user_id=${handle}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await fetch(`${API_BASE}/analytics/me`, {
+        headers: { Authorization: `Bearer ${authToken}` },
       });
       if (res.ok) {
         const data = await res.json();
@@ -115,10 +140,10 @@ export default function App() {
     }
   };
 
-  const fetchRoadmap = async () => {
+  const fetchRoadmap = async (authToken = token) => {
     try {
       const res = await fetch(`${API_BASE}/roadmap/me`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${authToken}` },
       });
       if (res.ok) {
         const data = await res.json();
@@ -129,7 +154,30 @@ export default function App() {
     }
   };
 
-  // AUTH HANDLERS
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setAuthError('');
+    try {
+      const res = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier: email || username, password }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        localStorage.setItem('access_token', data.access_token);
+        setToken(data.access_token);
+        // Pass the raw token string directly to avoid React state async delay
+        fetchCurrentUser(data.access_token);
+      } else {
+        setAuthError(data.detail || 'Invalid username/email or password.');
+      }
+    } catch (err) {
+      setAuthError('Connection error during login.');
+    }
+  };
+
+  // --- AUTH HANDLERS ---
   const handleRegister = async (e) => {
     e.preventDefault();
     setAuthError('');
@@ -141,7 +189,7 @@ export default function App() {
       });
       const data = await res.json();
       if (res.ok) {
-        setOtpCode(data.otp_code || ''); // Pre-fill OTP for test DX
+        setOtpCode(data.otp_code || ''); // Auto-fill for quick dev testing
         setAuthStep('otp');
       } else {
         setAuthError(data.detail || 'Registration failed.');
@@ -173,36 +221,8 @@ export default function App() {
     }
   };
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setAuthError('');
-    try {
-      const res = await fetch(`${API_BASE}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier: email || username || leetcodeHandle, password }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        if (data.status === 'pending_verification') {
-          setEmail(data.email);
-          setOtpCode(data.otp_code || '');
-          setAuthStep('otp');
-        } else {
-          localStorage.setItem('access_token', data.access_token);
-          setToken(data.access_token);
-          fetchCurrentUser();
-        }
-      } else {
-        setAuthError(data.detail || 'Invalid username/email or password.');
-      }
-    } catch (err) {
-      setAuthError('Connection error during login.');
-    }
-  };
-
   const handleCompleteOnboarding = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     setAuthError('');
     setSyncing(true);
     try {
@@ -235,10 +255,16 @@ export default function App() {
     try {
       const res = await fetch(`${API_BASE}/leetcode/sync`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
       });
       if (res.ok) {
         fetchCurrentUser();
+      } else if (res.status === 401) {
+        // Token expired, log out cleanly
+        handleLogout();
       }
     } catch (err) {
       console.error('Sync failed:', err);
@@ -247,7 +273,17 @@ export default function App() {
     }
   };
 
-  const handleFeedback = async (action) => {
+  // --- RECOMMENDATION FEEDBACK HANDLER ---
+  const openFeedbackModal = (action) => {
+    if (action === 'skip') {
+      submitFeedback('skip', 0);
+      return;
+    }
+    setPendingAction(action);
+    setShowAttemptModal(true);
+  };
+
+  const submitFeedback = async (action, timeMinutes) => {
     if (!recommendation) return;
     try {
       await fetch(`${API_BASE}/recommendations/feedback`, {
@@ -256,16 +292,17 @@ export default function App() {
         body: JSON.stringify({
           frontend_question_id: recommendation.problem_id,
           action: action,
-          time_spent_seconds: timeSpent * 60,
+          time_spent_seconds: timeMinutes * 60,
         }),
       });
       setShowAttemptModal(false);
-      fetchDashboardData(user?.leetcode_handle || 'starbuggs');
+      fetchDashboardData();
     } catch (err) {
       console.error('Feedback submission failed:', err);
     }
   };
 
+  // --- MOCK INTERVIEW HANDLERS ---
   const startMockInterview = async () => {
     try {
       const res = await fetch(`${API_BASE}/interviews/start`, {
@@ -275,7 +312,7 @@ export default function App() {
           interview_type: interviewType,
           difficulty: interviewDiff,
           duration_minutes: interviewDuration,
-          target_topics: ['DP', 'Graphs', 'Trees'],
+          target_topics: null, // Let backend dynamically choose lowest-mastery topics
         }),
       });
       if (res.ok) {
@@ -296,7 +333,10 @@ export default function App() {
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.event === 'message') {
-        setChatMessages((prev) => [...prev, { speaker: data.speaker, message_text: data.message_text, hint_given: data.hint_given }]);
+        setChatMessages((prev) => [
+          ...prev,
+          { speaker: data.speaker, message_text: data.message_text, hint_given: data.hint_given },
+        ]);
       }
     };
     wsRef.current = ws;
@@ -325,8 +365,10 @@ export default function App() {
       });
       if (res.ok) {
         const evalData = await res.json();
-        alert(`Mock Interview Finished!\nOverall Performance Index: ${evalData.overall_performance_index}\nCommunication: ${evalData.communication_score}\nTechnical Code Quality: ${evalData.code_quality_score}`);
-        fetchDashboardData(user?.leetcode_handle || 'starbuggs');
+        alert(
+          `Mock Interview Finished!\n\nOverall Performance Index: ${evalData.overall_performance_index}\nCommunication Score: ${evalData.communication_score}\nCode Quality Score: ${evalData.code_quality_score}`
+        );
+        fetchDashboardData();
         setActiveSection('analytics');
       }
     } catch (err) {
@@ -376,7 +418,7 @@ export default function App() {
 
             <div style={{ marginBottom: '1rem' }}>
               <label style={{ fontSize: '0.85rem', color: '#94a3b8', display: 'block', marginBottom: '0.25rem' }}>
-                {authStep === 'login' ? 'Email or Username or LeetCode ID' : 'Email Address'}
+                {authStep === 'login' ? 'Email or Username' : 'Email Address'}
               </label>
               <input
                 type={authStep === 'login' ? 'text' : 'email'}
@@ -505,7 +547,7 @@ export default function App() {
     );
   }
 
-  // --- RENDER STEP 4: AUTHENTICATED DASHBOARD (SECTIONS A TO G) ---
+  // --- RENDER STEP 4: AUTHENTICATED DASHBOARD ---
   return (
     <div className="app-container">
       {/* HEADER */}
@@ -547,10 +589,9 @@ export default function App() {
       </header>
 
       <main className="main-content">
-        {/* SECTION A & DASHBOARD OVERVIEW */}
+        {/* OVERVIEW SECTION */}
         {activeSection === 'overview' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            {/* SECTION A: PROFILE OVERVIEW */}
             <div className="card">
               <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <UserIcon color="#10b981" size={20} /> Section A: Profile Overview
@@ -558,28 +599,27 @@ export default function App() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem' }}>
                 <div style={{ background: '#0f172a', padding: '1rem', borderRadius: '0.5rem', textAlign: 'center' }}>
                   <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Total Solved</span>
-                  <h2 style={{ fontSize: '1.8rem', color: '#f8fafc', marginTop: '0.25rem' }}>{user?.total_solved || 527}</h2>
+                  <h2 style={{ fontSize: '1.8rem', color: '#f8fafc', marginTop: '0.25rem' }}>{user?.total_solved || 0}</h2>
                 </div>
                 <div style={{ background: '#0f172a', padding: '1rem', borderRadius: '0.5rem', textAlign: 'center' }}>
                   <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Easy Solved</span>
-                  <h2 style={{ fontSize: '1.8rem', color: '#10b981', marginTop: '0.25rem' }}>{user?.easy_solved || 153}</h2>
+                  <h2 style={{ fontSize: '1.8rem', color: '#10b981', marginTop: '0.25rem' }}>{user?.easy_solved || 0}</h2>
                 </div>
                 <div style={{ background: '#0f172a', padding: '1rem', borderRadius: '0.5rem', textAlign: 'center' }}>
                   <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Medium Solved</span>
-                  <h2 style={{ fontSize: '1.8rem', color: '#f59e0b', marginTop: '0.25rem' }}>{user?.medium_solved || 300}</h2>
+                  <h2 style={{ fontSize: '1.8rem', color: '#f59e0b', marginTop: '0.25rem' }}>{user?.medium_solved || 0}</h2>
                 </div>
                 <div style={{ background: '#0f172a', padding: '1rem', borderRadius: '0.5rem', textAlign: 'center' }}>
                   <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Hard Solved</span>
-                  <h2 style={{ fontSize: '1.8rem', color: '#ef4444', marginTop: '0.25rem' }}>{user?.hard_solved || 74}</h2>
+                  <h2 style={{ fontSize: '1.8rem', color: '#ef4444', marginTop: '0.25rem' }}>{user?.hard_solved || 0}</h2>
                 </div>
                 <div style={{ background: '#0f172a', padding: '1rem', borderRadius: '0.5rem', textAlign: 'center' }}>
                   <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Contest Rating</span>
-                  <h2 style={{ fontSize: '1.8rem', color: '#8b5cf6', marginTop: '0.25rem' }}>{user?.contest_rating || 1521}</h2>
+                  <h2 style={{ fontSize: '1.8rem', color: '#8b5cf6', marginTop: '0.25rem' }}>{user?.contest_rating || 1500}</h2>
                 </div>
               </div>
             </div>
 
-            {/* QUICK GRID FOR RECOMMENDATION & RADAR */}
             <div className="dashboard-grid">
               <div className="card">
                 <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -614,7 +654,7 @@ export default function App() {
           </div>
         )}
 
-        {/* SECTION B: NEXT QUESTION RECOMMENDATION */}
+        {/* SECTION B: RECOMMENDATION SECTION */}
         {activeSection === 'recommendation' && (
           <div className="card" style={{ maxWidth: '800px', margin: '0 auto' }}>
             <h3 style={{ fontSize: '1.3rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -662,16 +702,16 @@ export default function App() {
                   >
                     Solve on LeetCode <ExternalLink size={14} />
                   </a>
-                  <button className="tab-btn active" onClick={() => handleFeedback('mark_solved')}>Mark Solved</button>
-                  <button className="tab-btn" style={{ background: '#ef4444' }} onClick={() => handleFeedback('mark_failed')}>Mark Failed</button>
-                  <button className="tab-btn" onClick={() => handleFeedback('skip')}>Skip</button>
+                  <button className="tab-btn active" onClick={() => openFeedbackModal('solve')}>Mark Solved</button>
+                  <button className="tab-btn" style={{ background: '#ef4444', color: '#fff' }} onClick={() => openFeedbackModal('mark_failed')}>Mark Failed</button>
+                  <button className="tab-btn" onClick={() => openFeedbackModal('skip')}>Skip</button>
                 </div>
               </div>
             ) : null}
           </div>
         )}
 
-        {/* SECTION C: AI INTERVIEW CENTER */}
+        {/* SECTION C: AI MOCK INTERVIEW CENTER */}
         {activeSection === 'interview' && (
           <div className="split-layout">
             <div className="panel">
@@ -787,7 +827,7 @@ export default function App() {
               </h3>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem' }}>
-                {roadmap.target_companies.map((c) => (
+                {roadmap.target_companies?.map((c) => (
                   <div key={c.company} style={{ background: '#0f172a', border: '1px solid #334155', borderRadius: '0.5rem', padding: '1rem', textAlign: 'center' }}>
                     <h4 style={{ fontSize: '1.1rem', color: '#f8fafc' }}>{c.company}</h4>
                     <div style={{ fontSize: '1.6rem', fontWeight: 700, color: c.readiness_percentage > 70 ? '#10b981' : '#f59e0b', margin: '0.5rem 0' }}>
@@ -802,7 +842,7 @@ export default function App() {
             <div className="card">
               <h4 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Skill Gap & Target Topics</h4>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                {roadmap.skill_gap.map((sg) => (
+                {roadmap.skill_gap?.map((sg) => (
                   <div key={sg.topic} style={{ background: '#0f172a', padding: '0.75rem 1rem', borderRadius: '0.375rem', display: 'flex', justifyContent: 'space-between' }}>
                     <span>{sg.topic} (Current: {(sg.current_mastery * 100).toFixed(0)}%)</span>
                     <span style={{ color: '#ef4444', fontWeight: 600 }}>Gap: -{(sg.gap_score * 100).toFixed(0)}%</span>
@@ -853,7 +893,7 @@ export default function App() {
             <button
               className="sync-btn"
               onClick={async () => {
-                await handleCompleteOnboarding(new Event('click'));
+                await handleCompleteOnboarding(null);
                 setSettingsSuccess('Settings updated successfully!');
               }}
             >
@@ -862,6 +902,40 @@ export default function App() {
           </div>
         )}
       </main>
+
+      {/* ATTEMPT FEEDBACK MODAL */}
+      {showAttemptModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+          <div className="card" style={{ maxWidth: '400px', width: '100%', padding: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h3 style={{ fontSize: '1.1rem' }}>Record Problem Attempt</h3>
+              <button style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }} onClick={() => setShowAttemptModal(false)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{ fontSize: '0.85rem', color: '#94a3b8', display: 'block', marginBottom: '0.5rem' }}>Time Spent (Minutes)</label>
+              <input
+                type="number"
+                min={1}
+                max={120}
+                value={timeSpentMinutes}
+                onChange={(e) => setTimeSpentMinutes(parseInt(e.target.value) || 1)}
+                style={{ width: '100%', background: '#0f172a', border: '1px solid #334155', color: '#fff', padding: '0.6rem', borderRadius: '0.375rem' }}
+              />
+            </div>
+
+            <button
+              className="sync-btn"
+              style={{ width: '100%', justifyContent: 'center', padding: '0.65rem' }}
+              onClick={() => submitFeedback(pendingAction, timeSpentMinutes)}
+            >
+              Submit Attempt & Update Bandit
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
